@@ -1,90 +1,18 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { User, AuthContextType } from '../types';
-import { authApi } from '../api/authApi';
-import { message } from 'antd';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { jwtDecode } from 'jwt-decode';
+import { authAPI } from '../services/api';
+import type { LoginRequest, User, JwtPayload } from '../types/api';
+
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (credentials: LoginRequest) => Promise<void>;
+  logout: () => void;
+  role: 'employee' | 'manager' | null;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Проверяем наличие токена и пользователя в localStorage при загрузке
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
-
-  const login = async (username: string, password: string) => {
-    try {
-      const response = await authApi.login({ username, password });
-      setToken(response.token);
-      localStorage.setItem('token', response.token);
-      
-      // Получаем полную информацию о пользователе
-      try {
-        const userResponse = await fetch('/api/v1/users', {
-          headers: {
-            'Authorization': `Bearer ${response.token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (userResponse.ok) {
-          const users = await userResponse.json();
-          const currentUser = users.find((u: User) => u.username === username);
-          
-          if (currentUser) {
-            setUser(currentUser);
-            localStorage.setItem('user', JSON.stringify(currentUser));
-            message.success('Вход выполнен успешно!');
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Ошибка при получении данных пользователя:', error);
-      }
-      
-      // Fallback - если не удалось получить данные пользователя
-      const userInfo: User = {
-        id: 0,
-        username,
-        name: username,
-        role: response.role as 'manager' | 'employee',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      
-      setUser(userInfo);
-      localStorage.setItem('user', JSON.stringify(userInfo));
-      message.success('Вход выполнен успешно!');
-    } catch (error) {
-      message.error('Неверное имя пользователя или пароль');
-      throw error;
-    }
-  };
-
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    message.info('Вы вышли из системы');
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -94,3 +22,142 @@ export const useAuth = () => {
   return context;
 };
 
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [role, setRole] = useState<'employee' | 'manager' | null>(null);
+
+  const isAuthenticated = !!user;
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token');
+      const userRole = localStorage.getItem('userRole') as 'employee' | 'manager' | null;
+      const username = localStorage.getItem('username');
+      
+      if (token && userRole) {
+        setRole(userRole);
+        
+        // Декодируем JWT токен для получения данных пользователя
+        try {
+          console.log('=== ДЕКОДИРОВАНИЕ JWT ТОКЕНА ПРИ ИНИЦИАЛИЗАЦИИ ===');
+          console.log('Токен:', token);
+          
+          const decoded = jwtDecode<JwtPayload>(token);
+          console.log('Декодированные данные из токена:', decoded);
+          
+          setUser({
+            id: decoded.user_id,
+            username: decoded.username,
+            name: decoded.username, // Используем username как имя
+            role: decoded.role,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+          console.log('✅ Пользователь установлен из JWT токена при инициализации:', {
+            id: decoded.user_id,
+            username: decoded.username,
+            role: decoded.role
+          });
+          console.log('=== КОНЕЦ ДЕКОДИРОВАНИЯ JWT ПРИ ИНИЦИАЛИЗАЦИИ ===');
+          
+        } catch (jwtError) {
+          console.error('Ошибка декодирования JWT токена при инициализации:', jwtError);
+          // Fallback если не удалось декодировать токен
+          setUser({
+            id: 0,
+            username: username || '',
+            name: username || '',
+            role: userRole,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
+      setIsLoading(false);
+    };
+    
+    initializeAuth();
+  }, []);
+
+  const login = async (credentials: LoginRequest) => {
+    try {
+      const response = await authAPI.login(credentials);
+      const { token, role: userRole } = response.data;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('userRole', userRole);
+      localStorage.setItem('username', credentials.username);
+      
+      setRole(userRole);
+      
+      // Декодируем JWT токен для получения данных пользователя
+      try {
+        console.log('=== ДЕКОДИРОВАНИЕ JWT ТОКЕНА ===');
+        console.log('Токен:', token);
+        
+        const decoded = jwtDecode<JwtPayload>(token);
+        console.log('Декодированные данные из токена:', decoded);
+        
+        setUser({
+          id: decoded.user_id,
+          username: decoded.username,
+          name: decoded.username, // Используем username как имя
+          role: decoded.role,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+        console.log('✅ Пользователь установлен из JWT токена:', {
+          id: decoded.user_id,
+          username: decoded.username,
+          role: decoded.role
+        });
+        console.log('=== КОНЕЦ ДЕКОДИРОВАНИЯ JWT ===');
+        
+      } catch (jwtError) {
+        console.error('Ошибка декодирования JWT токена:', jwtError);
+        // Fallback если не удалось декодировать токен
+        setUser({
+          id: 0,
+          username: credentials.username,
+          name: credentials.username,
+          role: userRole,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('username');
+    setUser(null);
+    setRole(null);
+  };
+
+  const value: AuthContextType = {
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
+    role,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};

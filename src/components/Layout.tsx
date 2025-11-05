@@ -1,121 +1,60 @@
 import React from 'react';
-import { Layout as AntLayout, Menu, Button, Typography } from 'antd';
-import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  TeamOutlined,
-  ProjectOutlined,
-  LogoutOutlined,
-} from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
-
-const { Header, Sider, Content } = AntLayout;
-const { Text } = Typography;
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-const AppLayout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const managerMenuItems = [
-    {
-      key: '/employees',
-      icon: <TeamOutlined />,
-      label: 'Сотрудники',
-      onClick: () => navigate('/employees'),
-    },
-    {
-      key: '/dashboard',
-      icon: <ProjectOutlined />,
-      label: 'Задачи',
-      onClick: () => navigate('/dashboard'),
-    },
-  ];
-
-  const employeeMenuItems = [
-    {
-      key: '/dashboard',
-      icon: <ProjectOutlined />,
-      label: 'Мои задачи',
-      onClick: () => navigate('/dashboard'),
-    },
-  ];
-
-  const menuItems = user?.role === 'manager' ? managerMenuItems : employeeMenuItems;
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { user, logout, role } = useAuth();
 
   return (
-    <AntLayout style={{ minHeight: '100vh' }}>
-      <Sider
-        breakpoint="lg"
-        collapsedWidth="0"
-        style={{
-          overflow: 'auto',
-          height: '100vh',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-        }}
-      >
-        <div style={{ 
-          height: 64, 
-          margin: 16, 
-          color: 'white', 
-          fontSize: 20, 
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          Трекер задач
-        </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-        />
-      </Sider>
-      <AntLayout style={{ marginLeft: 200 }}>
-        <Header style={{ 
-          background: '#fff', 
-          padding: '0 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          boxShadow: '0 1px 4px rgba(0,21,41,.08)'
-        }}>
-          <div>
-            <Text strong>{user?.name}</Text>
-            <Text type="secondary" style={{ marginLeft: 16 }}>
-              {user?.role === 'manager' ? 'Руководитель' : 'Сотрудник'}
-            </Text>
-          </div>
-          <Button 
-            type="text" 
-            icon={<LogoutOutlined />}
-            onClick={handleLogout}
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+      <nav style={{ 
+        backgroundColor: 'var(--bg-secondary)', 
+        color: 'var(--text-primary)', 
+        padding: '1rem 2rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderBottom: '1px solid var(--border-color)',
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+      }}>
+        <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>
+          Система управления задачами
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>
+            Добро пожаловать, {user?.username} ({role === 'manager' ? 'Руководитель' : 'Сотрудник'})
+          </span>
+          <button
+            onClick={logout}
+            style={{
+              backgroundColor: 'var(--danger-color)',
+              color: 'white',
+              border: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'background-color 0.25s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#c82333';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--danger-color)';
+            }}
           >
-            Выход
-          </Button>
-        </Header>
-        <Content style={{ margin: '24px 16px', overflow: 'initial' }}>
-          <div style={{ padding: 24, background: '#fff', minHeight: 360 }}>
-            {children}
-          </div>
-        </Content>
-      </AntLayout>
-    </AntLayout>
+            Выйти
+          </button>
+        </div>
+      </nav>
+      
+      <main style={{ padding: '2rem', backgroundColor: 'var(--bg-primary)' }}>
+        {children}
+      </main>
+    </div>
   );
 };
 
-export default AppLayout;
-
+export default Layout;

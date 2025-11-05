@@ -1,78 +1,93 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import './App.css';
+import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import AppLayout from './components/Layout';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import EmployeesPage from './pages/EmployeesPage';
-import ManagerTasksPage from './pages/ManagerTasksPage';
+import LoginForm from './components/LoginForm';
+import RegisterForm from './components/RegisterForm';
+import Dashboard from './pages/Dashboard';
+import TasksPage from './pages/TasksPage';
 import MyTasksPage from './pages/MyTasksPage';
-import TaskDetailPage from './pages/TaskDetailPage';
+import UsersPage from './pages/UsersPage';
 
-const Dashboard: React.FC = () => {
-  const { user } = useAuth();
-  
-  if (user?.role === 'manager') {
-    return <ManagerTasksPage />;
+const AppRoutes: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        Загрузка...
+      </div>
+    );
   }
-  
-  return <MyTasksPage />;
+
+  if (!isAuthenticated) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', padding: '2rem' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h1 style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-primary)' }}>
+            Система управления задачами
+          </h1>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div>
+              <LoginForm />
+            </div>
+            <div>
+              <RegisterForm />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route 
+          path="/tasks" 
+          element={
+            <ProtectedRoute requiredRole="manager">
+              <TasksPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/my-tasks" 
+          element={
+            <ProtectedRoute requiredRole="employee">
+              <MyTasksPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/users" 
+          element={
+            <ProtectedRoute requiredRole="manager">
+              <UsersPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Layout>
+  );
 };
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Navigate to="/dashboard" replace />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Dashboard />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/employees"
-            element={
-              <ProtectedRoute requiredRole="manager">
-                <AppLayout>
-                  <EmployeesPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/tasks/:id"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <TaskDetailPage />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
   );
 }
 
