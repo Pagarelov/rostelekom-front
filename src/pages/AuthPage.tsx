@@ -126,15 +126,15 @@ const AuthPage: React.FC = () => {
           <form className="auth-form" onSubmit={handleLoginSubmit(onSubmitLogin)}>
             <div className="auth-field">
               <label htmlFor="login-username" className="auth-label">
-                Электронная почта
+                Логин
               </label>
               <input
                 id="login-username"
                 type="text"
                 className="auth-input"
-                placeholder="Электронная почта"
+                placeholder="Логин"
                 autoComplete="username"
-                {...registerLoginField('username', { required: 'Укажите email' })}
+                {...registerLoginField('username', { required: 'Укажите логин' })}
               />
               {loginErrors.username && <span className="auth-error-text">{loginErrors.username.message}</span>}
             </div>
@@ -181,19 +181,19 @@ const AuthPage: React.FC = () => {
 
             <div className="auth-field">
               <label htmlFor="register-username" className="auth-label">
-                Электронная почта
+                Логин
               </label>
               <input
                 id="register-username"
-                type="email"
+                type="text"
                 className="auth-input"
-                placeholder="Электронная почта"
-                autoComplete="email"
+                placeholder="Логин"
+                autoComplete="username"
                 {...registerSignUpField('username', {
-                  required: 'Укажите email',
+                  required: 'Укажите логин',
                   pattern: {
-                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                    message: 'Введите корректный email',
+                    value: /^[a-zA-Z0-9_.-]+$/,
+                    message: 'Логин может содержать латиницу, цифры и символы ._-',
                   },
                 })}
               />
