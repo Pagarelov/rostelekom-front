@@ -3,12 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import LoginForm from './components/LoginForm';
-import RegisterForm from './components/RegisterForm';
 import Dashboard from './pages/Dashboard';
 import TasksPage from './pages/TasksPage';
 import MyTasksPage from './pages/MyTasksPage';
 import UsersPage from './pages/UsersPage';
+import AuthPage from './pages/AuthPage';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,23 +27,7 @@ const AppRoutes: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', padding: '2rem' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h1 style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--text-primary)' }}>
-            Система управления задачами
-          </h1>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-            <div>
-              <LoginForm />
-            </div>
-            <div>
-              <RegisterForm />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <AuthPage />;
   }
 
   return (

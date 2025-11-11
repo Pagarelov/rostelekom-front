@@ -9,48 +9,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout, role } = useAuth();
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      <nav style={{ 
-        backgroundColor: 'var(--bg-secondary)', 
-        color: 'var(--text-primary)', 
-        padding: '1rem 2rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid var(--border-color)',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-      }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>
-          Система управления задачами
-        </h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: 'var(--text-secondary)' }}>
+    <div className="app-shell">
+      <nav className="app-nav">
+        <h1 className="app-nav__brand">Система управления задачами</h1>
+        <div className="app-nav__meta">
+          <span className="app-nav__user">
             Добро пожаловать, {user?.username} ({role === 'manager' ? 'Руководитель' : 'Сотрудник'})
           </span>
-          <button
-            onClick={logout}
-            style={{
-              backgroundColor: 'var(--danger-color)',
-              color: 'white',
-              border: 'none',
-              padding: '0.5rem 1rem',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              transition: 'background-color 0.25s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#c82333';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--danger-color)';
-            }}
-          >
+          <button className="app-nav__logout" onClick={logout}>
             Выйти
           </button>
         </div>
       </nav>
       
-      <main style={{ padding: '2rem', backgroundColor: 'var(--bg-primary)' }}>
+      <main className="app-content">
         {children}
       </main>
     </div>

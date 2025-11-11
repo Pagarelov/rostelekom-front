@@ -42,33 +42,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (token && userRole) {
         setRole(userRole);
         
-        // Декодируем JWT токен для получения данных пользователя
         try {
-          console.log('=== ДЕКОДИРОВАНИЕ JWT ТОКЕНА ПРИ ИНИЦИАЛИЗАЦИИ ===');
-          console.log('Токен:', token);
-          
           const decoded = jwtDecode<JwtPayload>(token);
-          console.log('Декодированные данные из токена:', decoded);
           
           setUser({
             id: decoded.user_id,
             username: decoded.username,
-            name: decoded.username, // Используем username как имя
+            name: decoded.username,
             role: decoded.role,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
           
-          console.log('✅ Пользователь установлен из JWT токена при инициализации:', {
-            id: decoded.user_id,
-            username: decoded.username,
-            role: decoded.role
-          });
-          console.log('=== КОНЕЦ ДЕКОДИРОВАНИЯ JWT ПРИ ИНИЦИАЛИЗАЦИИ ===');
-          
         } catch (jwtError) {
-          console.error('Ошибка декодирования JWT токена при инициализации:', jwtError);
-          // Fallback если не удалось декодировать токен
           setUser({
             id: 0,
             username: username || '',
@@ -96,33 +82,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setRole(userRole);
       
-      // Декодируем JWT токен для получения данных пользователя
       try {
-        console.log('=== ДЕКОДИРОВАНИЕ JWT ТОКЕНА ===');
-        console.log('Токен:', token);
-        
         const decoded = jwtDecode<JwtPayload>(token);
-        console.log('Декодированные данные из токена:', decoded);
         
         setUser({
           id: decoded.user_id,
           username: decoded.username,
-          name: decoded.username, // Используем username как имя
+          name: decoded.username,
           role: decoded.role,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
         
-        console.log('✅ Пользователь установлен из JWT токена:', {
-          id: decoded.user_id,
-          username: decoded.username,
-          role: decoded.role
-        });
-        console.log('=== КОНЕЦ ДЕКОДИРОВАНИЯ JWT ===');
-        
       } catch (jwtError) {
-        console.error('Ошибка декодирования JWT токена:', jwtError);
-        // Fallback если не удалось декодировать токен
         setUser({
           id: 0,
           username: credentials.username,
@@ -133,7 +105,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       }
     } catch (error) {
-      console.error('Login failed:', error);
       throw error;
     }
   };

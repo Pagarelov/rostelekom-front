@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { usersAPI } from '../services/api';
 import type { User, UserRequest } from '../types/api';
 
@@ -8,6 +9,8 @@ const UsersPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+
+  const navigate = useNavigate();
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<UserRequest>();
 
@@ -70,158 +73,90 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const getRoleColor = (role: string) => {
-    return role === 'manager' ? '#007bff' : '#6c757d';
-  };
-
   const getRoleText = (role: string) => {
     return role === 'manager' ? 'Руководитель' : 'Сотрудник';
   };
 
+  const handleBack = () => {
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
   return (
-    <div style={{ color: 'var(--text-primary)' }}>
-      <h1 style={{ color: 'var(--text-primary)', marginBottom: '2rem' }}>Управление пользователями</h1>
-      
+    <section className="page-section">
+      <button type="button" className="back-link" onClick={handleBack}>
+        Назад
+      </button>
+      <div>
+        <h1 className="page-title">Управление пользователями</h1>
+        <p className="page-subtitle">
+          Создавайте, обновляйте и удаляйте учетные записи сотрудников, контролируйте их роли.
+        </p>
+      </div>
+
       {error && (
-        <div style={{ 
-          color: 'var(--danger-color)', 
-          marginBottom: '1rem', 
-          padding: '10px', 
-          backgroundColor: 'rgba(220, 53, 69, 0.1)', 
-          border: '1px solid var(--danger-color)',
-          borderRadius: '4px' 
-        }}>
+        <div className="auth-message auth-message-error">
           {error}
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        {/* Edit User Form */}
+      <div className="page-grid page-grid--two">
         {selectedUser && (
-          <div style={{ 
-            border: '1px solid var(--border-color)', 
-            borderRadius: '8px', 
-            padding: '1.5rem',
-            backgroundColor: 'var(--bg-secondary)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-          }}>
-            <h2 style={{ color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Редактировать пользователя</h2>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Имя пользователя:</label>
+          <div className="glass-card">
+            <h2 className="card-title">Редактировать пользователя</h2>
+            <form className="form-card" onSubmit={handleSubmit(onSubmit)}>
+              <div className="form-card__field">
+                <label htmlFor="user-username">Имя пользователя</label>
                 <input
+                  id="user-username"
                   {...register('username', { required: 'Имя пользователя обязательно' })}
-                  style={{ 
-                    width: '100%', 
-                    padding: '12px', 
-                    border: '1px solid var(--border-color)', 
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    color: 'var(--text-primary)'
-                  }}
                 />
-                {errors.username && <span style={{ color: 'var(--danger-color)', fontSize: '14px' }}>{errors.username.message}</span>}
+                {errors.username && <span className="form-card__error">{errors.username.message}</span>}
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Полное имя:</label>
+              <div className="form-card__field">
+                <label htmlFor="user-name">Полное имя</label>
                 <input
+                  id="user-name"
                   {...register('name', { required: 'Полное имя обязательно' })}
-                  style={{ 
-                    width: '100%', 
-                    padding: '12px', 
-                    border: '1px solid var(--border-color)', 
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    color: 'var(--text-primary)'
-                  }}
                 />
-                {errors.name && <span style={{ color: 'var(--danger-color)', fontSize: '14px' }}>{errors.name.message}</span>}
+                {errors.name && <span className="form-card__error">{errors.name.message}</span>}
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Новый пароль (оставьте пустым, чтобы не изменять):</label>
+              <div className="form-card__field">
+                <label htmlFor="user-password">Новый пароль (оставьте пустым, чтобы не изменять)</label>
                 <input
-                  {...register('password')}
+                  id="user-password"
                   type="password"
-                  style={{ 
-                    width: '100%', 
-                    padding: '12px', 
-                    border: '1px solid var(--border-color)', 
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    color: 'var(--text-primary)'
-                  }}
+                  {...register('password')}
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Роль:</label>
+              <div className="form-card__field">
+                <label htmlFor="user-role">Роль</label>
                 <select
+                  id="user-role"
                   {...register('role', { required: 'Роль обязательна' })}
-                  style={{ 
-                    width: '100%', 
-                    padding: '12px', 
-                    border: '1px solid var(--border-color)', 
-                    borderRadius: '6px',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    color: 'var(--text-primary)'
-                  }}
                 >
                   <option value="employee">Сотрудник</option>
                   <option value="manager">Руководитель</option>
                 </select>
-                {errors.role && <span style={{ color: 'var(--danger-color)', fontSize: '14px' }}>{errors.role.message}</span>}
+                {errors.role && <span className="form-card__error">{errors.role.message}</span>}
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  style={{
-                    backgroundColor: 'var(--accent-color)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '6px',
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    opacity: isLoading ? 0.6 : 1,
-                    transition: 'background-color 0.25s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isLoading) {
-                      e.currentTarget.style.backgroundColor = 'var(--accent-hover)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isLoading) {
-                      e.currentTarget.style.backgroundColor = 'var(--accent-color)';
-                    }
-                  }}
-                >
+              <div className="form-actions">
+                <button className="pill-button" type="submit" disabled={isLoading}>
                   {isLoading ? 'Сохранение...' : 'Обновить'}
                 </button>
-                
                 <button
+                  className="pill-button pill-button--secondary"
                   type="button"
                   onClick={() => {
                     setSelectedUser(null);
                     reset();
-                  }}
-                  style={{
-                    backgroundColor: 'var(--text-muted)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.25s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#6c757d';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'var(--text-muted)';
                   }}
                 >
                   Отмена
@@ -231,108 +166,40 @@ const UsersPage: React.FC = () => {
           </div>
         )}
 
-        {/* Users List */}
-        <div style={{ 
-          border: '1px solid var(--border-color)', 
-          borderRadius: '8px', 
-          padding: '1.5rem',
-          backgroundColor: 'var(--bg-secondary)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-        }}>
-          <h2 style={{ color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Список пользователей</h2>
+        <div className="glass-card">
+          <h2 className="card-title">Список пользователей</h2>
           {isLoading ? (
-            <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>Загрузка...</p>
+            <p className="muted-text" style={{ textAlign: 'center' }}>Загрузка...</p>
           ) : (
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+            <div className="list-card">
               {users.map(user => (
-                <div
-                  key={user.id}
-                  style={{
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    marginBottom: '1rem',
-                    backgroundColor: 'var(--bg-tertiary)',
-                    transition: 'box-shadow 0.25s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                <div key={user.id} className="list-item">
+                  <div className="list-item__header">
                     <div>
-                      <h4 style={{ margin: 0, color: 'var(--text-primary)' }}>{user.name}</h4>
-                      <p style={{ margin: '0.25rem 0', color: 'var(--text-secondary)' }}>@{user.username}</p>
+                      <h4 className="list-item__title">{user.name}</h4>
+                      <p className="muted-text">@{user.username}</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={() => handleEdit(user)}
-                        style={{
-                          backgroundColor: 'var(--warning-color)',
-                          color: 'black',
-                          border: 'none',
-                          padding: '0.5rem 0.75rem',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          transition: 'background-color 0.25s'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#e0a800';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'var(--warning-color)';
-                        }}
-                      >
+                    <div className="list-item__actions">
+                      <button className="chip-button chip-button--warning" onClick={() => handleEdit(user)}>
                         Редактировать
                       </button>
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        style={{
-                          backgroundColor: 'var(--danger-color)',
-                          color: 'white',
-                          border: 'none',
-                          padding: '0.5rem 0.75rem',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          transition: 'background-color 0.25s'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#c82333';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'var(--danger-color)';
-                        }}
-                      >
+                      <button className="chip-button chip-button--danger" onClick={() => handleDelete(user.id)}>
                         Удалить
                       </button>
                     </div>
                   </div>
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ 
-                      backgroundColor: user.role === 'manager' ? 'var(--info-color)' : 'var(--text-muted)',
-                      color: 'white', 
-                      padding: '0.25rem 0.5rem', 
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
-                      {getRoleText(user.role)}
-                    </span>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+
+                  <div className="list-item__footer">
+                    <span className="tag">{getRoleText(user.role)}</span>
+                    <span className="list-item__timestamp">
                       Создан: {new Date(user.created_at).toLocaleDateString()}
-                    </div>
+                    </span>
                   </div>
                 </div>
               ))}
-              
+
               {users.length === 0 && (
-                <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                <p className="muted-text" style={{ textAlign: 'center', fontStyle: 'italic' }}>
                   Пользователей пока нет
                 </p>
               )}
@@ -340,7 +207,7 @@ const UsersPage: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
