@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { jwtDecode } from 'jwt-decode';
 import { commentsAPI, usersAPI } from '../services/api';
-import type { Comment, CommentRequest, User } from '../types/api';
+import type { Comment, CommentRequest, User, JwtPayload } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
 
 interface CommentsSectionProps {
@@ -89,61 +90,108 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ taskId }) => {
   };
 
   const handleDelete = async (commentId: number) => {
-    if (!window.confirm('Вы уверены, что хотите удалить этот комментарий?')) return;
-    
     try {
       setIsLoading(true);
       setError('');
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Требуется авторизация');
+        return;
+      }
+      
+      if (!user) {
+        setError('Пользователь не авторизован');
+        return;
+      }
+      
+      let tokenRole: string | null = null;
+      try {
+        const decoded = jwtDecode<JwtPayload>(token);
+        tokenRole = decoded.role;
+      } catch (e) {
+        console.warn('Failed to decode token:', e);
+      }
+      
+      console.log('Deleting comment:', {
+        commentId,
+        userId: user.id,
+        userRole: user.role,
+        tokenRole,
+        isManager: user.role === 'manager',
+        tokenRoleIsManager: tokenRole === 'manager'
+      });
+      
+      const comment = comments.find(c => c.id === commentId);
+      if (!comment) {
+        setError('Комментарий не найден');
+        return;
+      }
+      
+      if (tokenRole !== 'manager' && comment.user_id !== user.id) {
+        setError('Только руководитель может удалять комментарии других пользователей');
+        return;
+      }
+      
       await commentsAPI.delete(commentId);
       await fetchComments();
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      setError(error.response?.data?.message || 'Ошибка удаления комментария');
+      const error = err as { 
+        response?: { 
+          status?: number;
+          data?: { message?: string } 
+        } 
+      };
+      
+      console.error('Delete comment error:', error);
+      
+      if (error.response?.status === 403) {
+        setError('Недостаточно прав для удаления комментария. Убедитесь, что вы вошли как руководитель.');
+      } else {
+        setError(error.response?.data?.message || 'Ошибка удаления комментария');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const getUserName = (userId: number) => {
-    // Если это текущий пользователь, показываем его данные
     if (user?.id === userId) {
       return user.username || `Пользователь ${userId}`;
     }
     
-    // Проверяем кэш
     const cachedUser = users.get(userId);
     if (cachedUser) {
       return cachedUser.name || cachedUser.username || `Пользователь ${userId}`;
     }
     
-    // Загружаем пользователя асинхронно
     void fetchUserById(userId);
     
-    // Показываем ID пока загружается
     return `Пользователь ${userId}`;
   };
 
   const getUserRole = (userId: number) => {
-    // Если это текущий пользователь, используем его роль
     if (user?.id === userId) {
       return user.role;
     }
     
-    // Проверяем кэш
     const cachedUser = users.get(userId);
     if (cachedUser) {
       return cachedUser.role;
     }
     
-    // Загружаем пользователя асинхронно
     void fetchUserById(userId);
     
-    // Показываем unknown пока загружается
     return 'unknown';
   };
 
   const canDeleteComment = (comment: Comment) => {
-    return user?.id === comment.user_id || user?.role === 'manager';
+    if (!user) return false;
+    // Пользователь может удалить свой комментарий
+    if (user.id === comment.user_id) return true;
+    // Руководитель может удалить любой комментарий
+    if (user.role === 'manager') return true;
+    return false;
   };
 
   return (

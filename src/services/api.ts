@@ -25,6 +25,10 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Убеждаемся, что заголовок установлен правильно
+  if (!config.headers.Authorization) {
+    console.warn('Authorization header is missing');
+  }
   return config;
 });
 
